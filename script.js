@@ -14,7 +14,45 @@ const API_URL = "https://proxy.cors.dev/https://api-web.nhle.com/v1/standings/no
 let allTeams = [];
 
 // Haetaan joukkueiden tiedot API:sta
-async function getTeams() {
+
+ // Haetaan NHL-joukkueiden tiedot jQuery AJAX -kutsulla
+function getTeams() {
+
+    // Näytetään latausviesti
+    $("#teams").text("Ladataan joukkueita...");
+
+    // Lähetetään AJAX-pyyntö NHL API:lle
+    $.ajax({
+        url: API_URL,
+        method: "GET",
+        dataType: "json",
+
+        // Suoritetaan, kun tietojen haku onnistuu
+        success: function(data) {
+
+            // Tallennetaan joukkueet muuttujaan
+            allTeams = data.standings;
+
+            // Näytetään joukkueet verkkosivulla
+            displayTeams(allTeams);
+
+            // Täytetään joukkueiden pudotusvalikko
+            populateTeamSelect(allTeams);
+        },
+
+        // Suoritetaan, jos tietojen haku epäonnistuu
+        error: function(xhr, status, error) {
+
+            console.error("API-virhe:", error);
+
+            // Näytetään virheilmoitus käyttäjälle
+            $("#teams").text(
+                "Joukkueiden lataaminen epäonnistui. Yritä myöhemmin uudelleen."
+            );
+        }
+    });
+}
+
 
     const teamsContainer = document.getElementById("teams");
 
