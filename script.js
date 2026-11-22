@@ -280,7 +280,7 @@ function displayStandings(teams) {
     // Luodaan tumma Bootstrap-taulukko
 const table = $("<table>")
     .addClass("table table-dark table-striped table-hover");
-    
+
     // Taulukon otsikkorivi
     const headerRow = $("<tr>");
 
@@ -478,6 +478,53 @@ function initializeTeamSelect() {
 // ==========================================
 // 12. SOVELLUKSEN KÄYNNISTÄMINEN
 // ==========================================
+
+
+// ==========================================
+// 13. SUOSIKKIJOUKKUEEN TALLENTAMINEN
+// ==========================================
+
+function initializeFavorites() {
+
+    // Haetaan aiemmin tallennettu suosikkijoukkue
+    const savedFavorite = localStorage.getItem("favoriteTeam");
+
+    // Näytetään tallennettu suosikki sivulla
+    if (savedFavorite) {
+        $("#favoriteTeam").text(
+            "⭐ Suosikkijoukkueesi: " + savedFavorite
+        );
+    }
+
+    // Kuunnellaan tallennuspainikkeen klikkausta
+    $("#saveFavorite").on("click", function() {
+
+        // Haetaan valittu joukkue pudotusvalikosta
+        const selectedTeam = $("#teamSelect").val();
+
+        // Tarkistetaan, että joukkue on valittu
+        if (!selectedTeam) {
+            $("#favoriteTeam").text(
+                "Valitse ensin joukkue!"
+            );
+            return;
+        }
+
+        // Haetaan joukkueen nimi valikosta
+        const teamName = $("#teamSelect option:selected").text();
+
+        // Tallennetaan suosikkijoukkue selaimeen
+        localStorage.setItem("favoriteTeam", teamName);
+
+        // Näytetään tallennettu joukkue käyttäjälle
+        $("#favoriteTeam").text(
+            "⭐ Suosikkijoukkueesi: " + teamName
+        );
+
+        console.log("Suosikkijoukkue tallennettu:", teamName);
+    });
+}
+
 
 // Suoritetaan, kun HTML-sivu on latautunut
 $(document).ready(function() {
