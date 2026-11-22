@@ -526,24 +526,24 @@ function initializeFavorites() {
 }
 
 
-// Suoritetaan, kun HTML-sivu on latautunut
+
+// ==========================================
+// SOVELLUKSEN KÄYNNISTÄMINEN
+// ==========================================
+
 $(document).ready(function() {
 
     console.log("Hockey Center 2.0 käynnistyy!");
 
-    // Käynnistetään hakukentän kuuntelija
     initializeSearch();
-
-    // Käynnistetään joukkuevalikon kuuntelija
     initializeTeamSelect();
 
-    // Haetaan NHL-joukkueet
+    // Käynnistetään suosikkijoukkueen tallennus
+    initializeFavorites();
+
     getTeams();
-
-    // Haetaan tämän päivän ottelut
     getGames();
-
-    // Haetaan NHL-sarjataulukko
     getStandings();
 
 });
+
