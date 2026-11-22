@@ -277,9 +277,10 @@ function displayStandings(teams) {
     }
 
     // Luodaan taulukko
-    const table = $("<table>")
-        .addClass("table table-striped table-hover");
-
+    // Luodaan tumma Bootstrap-taulukko
+const table = $("<table>")
+    .addClass("table table-dark table-striped table-hover");
+    
     // Taulukon otsikkorivi
     const headerRow = $("<tr>");
 
