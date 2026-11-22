@@ -1,490 +1,501 @@
 
 /*
-    Hockey Center
-    NHL-joukkueiden seurantasovellus
+    Hockey Center 2.0
+    Projekti 3 - JavaScript ulkoisilla kirjastoilla
 
-    Sovellus hakee NHL-joukkueiden tiedot
-    NHL API -rajapinnasta.
+    Käytetyt kirjastot:
+    - jQuery: AJAX, DOM-käsittely ja tapahtumankuuntelijat
+    - Bootstrap 5: käyttöliittymän ulkoasu
 */
 
-// NHL API -rajapinnan osoite
+// NHL API -osoitteet
 const API_URL = "https://proxy.cors.dev/https://api-web.nhle.com/v1/standings/now";
 
-// Tallennetaan kaikki joukkueet tähän muuttujaan
+const GAMES_API_URL = "https://proxy.cors.dev/https://api-web.nhle.com/v1/score/now";
+
+const STANDINGS_API_URL = API_URL;
+
+// Tallennetaan NHL-joukkueet tähän taulukkoon
 let allTeams = [];
 
-// Haetaan joukkueiden tiedot API:sta
 
- // Haetaan NHL-joukkueiden tiedot jQuery AJAX -kutsulla
+// ==========================================
+// 1. NHL-JOUKKUEIDEN HAKEMINEN
+// ==========================================
+
 function getTeams() {
 
-    // Näytetään latausviesti
     $("#teams").text("Ladataan joukkueita...");
 
-    // Lähetetään AJAX-pyyntö NHL API:lle
+    // Haetaan tiedot jQuery AJAX -kutsulla
     $.ajax({
         url: API_URL,
         method: "GET",
         dataType: "json",
+        timeout: 15000,
 
-        // Suoritetaan, kun tietojen haku onnistuu
         success: function(data) {
 
-            // Tallennetaan joukkueet muuttujaan
+            // Tarkistetaan, että joukkueita löytyi
+            if (!data.standings) {
+                $("#teams").text("Joukkueita ei löytynyt.");
+                return;
+            }
+
+            // Tallennetaan joukkueet
             allTeams = data.standings;
 
-            // Näytetään joukkueet verkkosivulla
+            // Näytetään joukkuekortit
             displayTeams(allTeams);
 
-            // Täytetään joukkueiden pudotusvalikko
+            // Täytetään joukkuevalikko
             populateTeamSelect(allTeams);
         },
 
-        // Suoritetaan, jos tietojen haku epäonnistuu
         error: function(xhr, status, error) {
 
-            console.error("API-virhe:", error);
+            console.error("Joukkueiden API-virhe:", status, error);
 
-            // Näytetään virheilmoitus käyttäjälle
             $("#teams").text(
-                "Joukkueiden lataaminen epäonnistui. Yritä myöhemmin uudelleen."
+                "Joukkueiden lataaminen epäonnistui."
             );
         }
     });
 }
 
 
-    const teamsContainer = document.getElementById("teams");
+// ==========================================
+// 2. JOUKKUEKORTTIEN NÄYTTÄMINEN
+// ==========================================
 
-    try {
-
-        // Lähetetään AJAX-pyyntö NHL:n palvelimelle
-        const response = await fetch(API_URL);
-
-        // Tarkistetaan, onnistuiko pyyntö
-        if (!response.ok) {
-            throw new Error("Tietojen hakeminen epäonnistui");
-        }
-
-        // Muutetaan palvelimen vastaus JSON-muotoon
-        const data = await response.json();
-
-        // Tallennetaan joukkueet muuttujaan
-        allTeams = data.standings;
-
-        // Näytetään kaikki joukkueet
-        displayTeams(allTeams);
-        populateTeamSelect(allTeams);
-
-    } catch (error) {
-
-        // Tulostetaan virhe selaimen konsoliin
-        console.error("API-virhe:", error);
-
-        // Näytetään käyttäjälle virheilmoitus
-        teamsContainer.textContent =
-            "Joukkueiden lataaminen epäonnistui. Yritä myöhemmin uudelleen.";
-    }
-}
-
-
-// Näytetään joukkueet verkkosivulla
 function displayTeams(teams) {
 
-    const teamsContainer = document.getElementById("teams");
+    const teamsContainer = $("#teams");
 
-    // Tyhjennetään vanhat joukkuekortit
-    teamsContainer.innerHTML = "";
+    // Tyhjennetään vanhat kortit
+    teamsContainer.empty();
 
-    // Tarkistetaan löytyikö joukkueita
-    if (teams.length === 0) {
-
-        teamsContainer.textContent =
-            "Joukkueita ei löytynyt.";
-
+    if (!teams || teams.length === 0) {
+        teamsContainer.text("Joukkueita ei löytynyt.");
         return;
     }
 
-    // Käydään kaikki joukkueet yksitellen läpi
-    teams.forEach(team => {
+    // Käydään joukkueet läpi
+    teams.forEach(function(team) {
 
-        // Luodaan joukkueelle oma kortti
-        const teamCard = document.createElement("div");
+        // Luodaan kortti jQueryllä
+        const teamCard = $("<div>").addClass("team-card");
 
-        teamCard.classList.add("team-card");
+        // Joukkueen logo
+        const logo = $("<img>")
+            .attr("src", team.teamLogo)
+            .attr("alt", team.teamName.default + " logo")
+            .addClass("team-logo");
 
-        // Luodaan joukkueen logo
-        const logo = document.createElement("img");
+        // Joukkueen nimi
+        const name = $("<h3>")
+            .text(team.teamName.default);
 
-        logo.src = team.teamLogo;
-        logo.alt = team.teamName.default + " logo";
-        logo.classList.add("team-logo");
+        // Pisteet
+        const points = $("<p>")
+            .text("Pisteet: " + team.points);
 
-        // Luodaan joukkueen nimi
-        const name = document.createElement("h3");
+        // Voitot
+        const wins = $("<p>")
+            .text("Voitot: " + team.wins);
 
-        name.textContent = team.teamName.default;
+        // Tappiot
+        const losses = $("<p>")
+            .text("Tappiot: " + team.losses);
 
-        // Luodaan joukkueen pistetiedot
-        const points = document.createElement("p");
+        // Lisätään tiedot korttiin
+        teamCard.append(
+            logo,
+            name,
+            points,
+            wins,
+            losses
+        );
 
-        points.textContent =
-            "Pisteet: " + team.points;
-
-        // Luodaan voittojen määrä
-        const wins = document.createElement("p");
-
-        wins.textContent =
-            "Voitot: " + team.wins;
-
-        // Luodaan tappioiden määrä
-        const losses = document.createElement("p");
-
-        losses.textContent =
-            "Tappiot: " + team.losses;
-
-        // Lisätään kaikki tiedot joukkuekorttiin
-        teamCard.appendChild(logo);
-        teamCard.appendChild(name);
-        teamCard.appendChild(points);
-        teamCard.appendChild(wins);
-        teamCard.appendChild(losses);
-
-        // Lisätään valmis kortti verkkosivulle
-        teamsContainer.appendChild(teamCard);
-
+        // Lisätään kortti sivulle
+        teamsContainer.append(teamCard);
     });
 }
 
 
-// Haetaan hakukenttä HTML-sivulta
-const searchInput = document.getElementById("teamSearch");
+// ==========================================
+// 3. JOUKKUEIDEN HAKUTOIMINTO
+// ==========================================
 
-// Lisätään hakukentälle tapahtumankäsittelijä
-searchInput.addEventListener("input", function() {
+function initializeSearch() {
 
-    // Luetaan käyttäjän kirjoittama hakusana
-    const searchText = searchInput.value.toLowerCase();
+    // Kuunnellaan hakukentän kirjoittamista
+    $("#teamSearch").on("input", function() {
 
-    // Etsitään hakusanaa vastaavat joukkueet
-    const filteredTeams = allTeams.filter(team =>
+        // Luetaan hakusana
+        const searchText = $(this)
+            .val()
+            .toLowerCase();
 
-        team.teamName.default
-            .toLowerCase()
-            .includes(searchText)
+        // Suodatetaan joukkueet
+        const filteredTeams = allTeams.filter(function(team) {
 
-    );
+            return team.teamName.default
+                .toLowerCase()
+                .includes(searchText);
+        });
 
-    // Näytetään hakua vastaavat joukkueet
-    displayTeams(filteredTeams);
-
-});
-
-
-// Käynnistetään NHL-joukkueiden haku
-getTeams();
-
-
-// NHL:n tämän päivän otteluiden API-osoite
-const GAMES_API_URL = "https://proxy.cors.dev/https://api-web.nhle.com/v1/score/now";
-
-// Haetaan tämän päivän ottelut
-async function getGames() {
-
-    const gamesContainer = document.getElementById("games");
-
-    try {
-
-        // Haetaan ottelut NHL:n API:sta
-        const response = await fetch(GAMES_API_URL);
-
-        if (!response.ok) {
-            throw new Error("Otteluiden hakeminen epäonnistui");
-        }
-
-        // Muutetaan vastaus JSON-muotoon
-        const data = await response.json();
-
-        // Näytetään ottelut sivulla
-        displayGames(data.games);
-
-    } catch (error) {
-
-        console.error("Otteluvirhe:", error);
-
-        gamesContainer.textContent =
-            "Otteluiden lataaminen epäonnistui.";
-    }
+        // Näytetään hakutulokset
+        displayTeams(filteredTeams);
+    });
 }
 
 
-// Näytetään ottelut verkkosivulla
+// ==========================================
+// 4. NHL-OTTELUIDEN HAKEMINEN
+// ==========================================
+
+function getGames() {
+
+    $("#games").text("Ladataan otteluita...");
+
+    $.ajax({
+        url: GAMES_API_URL,
+        method: "GET",
+        dataType: "json",
+        timeout: 15000,
+
+        success: function(data) {
+
+            displayGames(data.games);
+        },
+
+        error: function(xhr, status, error) {
+
+            console.error("Otteluiden API-virhe:", status, error);
+
+            $("#games").text(
+                "Otteluiden lataaminen epäonnistui."
+            );
+        }
+    });
+}
+
+
+// ==========================================
+// 5. NHL-OTTELUIDEN NÄYTTÄMINEN
+// ==========================================
+
 function displayGames(games) {
 
-    const gamesContainer = document.getElementById("games");
+    const gamesContainer = $("#games");
 
-    gamesContainer.innerHTML = "";
+    gamesContainer.empty();
 
     if (!games || games.length === 0) {
-
-        gamesContainer.textContent =
-            "Tänään ei ole NHL-otteluita.";
-
+        gamesContainer.text("Tänään ei ole NHL-otteluita.");
         return;
     }
 
-    games.forEach(game => {
+    games.forEach(function(game) {
 
-        const gameCard = document.createElement("div");
+        const gameCard = $("<div>")
+            .addClass("team-card");
 
-        gameCard.classList.add("team-card");
+        // Koti- ja vierasjoukkue
+        const homeTeam = $("<h3>")
+            .text(
+                game.homeTeam.abbrev + " " +
+                (game.homeTeam.score ?? "-")
+            );
 
-        const homeTeam = document.createElement("h3");
-        homeTeam.textContent =
-            game.homeTeam.abbrev + " " + game.homeTeam.score;
+        const awayTeam = $("<h3>")
+            .text(
+                game.awayTeam.abbrev + " " +
+                (game.awayTeam.score ?? "-")
+            );
 
-        const awayTeam = document.createElement("h3");
-        awayTeam.textContent =
-            game.awayTeam.abbrev + " " + game.awayTeam.score;
+        // Ottelun tila
+        const status = $("<p>")
+            .text("Ottelun tila: " + game.gameState);
 
-        const status = document.createElement("p");
-        status.textContent = game.gameState;
+        gameCard.append(
+            homeTeam,
+            awayTeam,
+            status
+        );
 
-        gameCard.appendChild(homeTeam);
-        gameCard.appendChild(awayTeam);
-        gameCard.appendChild(status);
-
-        gamesContainer.appendChild(gameCard);
-
+        gamesContainer.append(gameCard);
     });
 }
 
 
-// Käynnistetään otteluiden haku
-getGames();
+// ==========================================
+// 6. NHL-SARJATAULUKON HAKEMINEN
+// ==========================================
 
+function getStandings() {
 
-// NHL-sarjataulukon API-osoite
-const STANDINGS_API_URL = "https://proxy.cors.dev/https://api-web.nhle.com/v1/standings/now";
+    $("#standings").text("Ladataan sarjataulukkoa...");
 
-// Haetaan NHL-sarjataulukko
-async function getStandings() {
+    $.ajax({
+        url: STANDINGS_API_URL,
+        method: "GET",
+        dataType: "json",
+        timeout: 15000,
 
-    const standingsContainer = document.getElementById("standings");
+        success: function(data) {
 
-    try {
+            displayStandings(data.standings);
+        },
 
-        // Haetaan sarjataulukon tiedot API:sta
-        const response = await fetch(STANDINGS_API_URL);
+        error: function(xhr, status, error) {
 
-        if (!response.ok) {
-            throw new Error("Sarjataulukon hakeminen epäonnistui");
+            console.error("Sarjataulukon API-virhe:", status, error);
+
+            $("#standings").text(
+                "Sarjataulukon lataaminen epäonnistui."
+            );
         }
-
-        // Muutetaan vastaus JSON-muotoon
-        const data = await response.json();
-
-        // Näytetään sarjataulukko
-        displayStandings(data.standings);
-
-    } catch (error) {
-
-        console.error("Sarjataulukon virhe:", error);
-
-        standingsContainer.textContent =
-            "Sarjataulukon lataaminen epäonnistui.";
-    }
+    });
 }
 
 
-// Näytetään sarjataulukko sivulla
+// ==========================================
+// 7. SARJATAULUKON NÄYTTÄMINEN
+// ==========================================
+
 function displayStandings(teams) {
 
-    const standingsContainer = document.getElementById("standings");
+    const standingsContainer = $("#standings");
 
-    standingsContainer.innerHTML = "";
+    standingsContainer.empty();
+
+    if (!teams || teams.length === 0) {
+        standingsContainer.text("Sarjataulukkoa ei löytynyt.");
+        return;
+    }
 
     // Luodaan taulukko
-    const table = document.createElement("table");
+    const table = $("<table>")
+        .addClass("table table-striped table-hover");
 
-    // Luodaan taulukon otsikko
-    const headerRow = document.createElement("tr");
+    // Taulukon otsikkorivi
+    const headerRow = $("<tr>");
 
-    const headers = ["Sija", "Joukkue", "Ottelut", "Voitot", "Pisteet"];
+    const headers = [
+        "Sija",
+        "Joukkue",
+        "Ottelut",
+        "Voitot",
+        "Pisteet"
+    ];
 
-    headers.forEach(headerText => {
+    headers.forEach(function(headerText) {
 
-        const th = document.createElement("th");
-        th.textContent = headerText;
+        const th = $("<th>").text(headerText);
 
-        headerRow.appendChild(th);
-
+        headerRow.append(th);
     });
 
-    table.appendChild(headerRow);
+    const thead = $("<thead>").append(headerRow);
+    const tbody = $("<tbody>");
 
     // Järjestetään joukkueet pisteiden mukaan
-    const sortedTeams = [...teams].sort(
-        (a, b) => b.points - a.points
-    );
+    const sortedTeams = [...teams].sort(function(a, b) {
+        return b.points - a.points;
+    });
 
     // Lisätään joukkueet taulukkoon
-    sortedTeams.forEach((team, index) => {
+    sortedTeams.forEach(function(team, index) {
 
-        const row = document.createElement("tr");
+        const row = $("<tr>");
 
-        const position = document.createElement("td");
-        position.textContent = index + 1;
+        row.append(
+            $("<td>").text(index + 1),
+            $("<td>").text(team.teamName.default),
+            $("<td>").text(team.gamesPlayed),
+            $("<td>").text(team.wins),
+            $("<td>").text(team.points)
+        );
 
-        const name = document.createElement("td");
-        name.textContent = team.teamName.default;
-
-        const games = document.createElement("td");
-        games.textContent = team.gamesPlayed;
-
-        const wins = document.createElement("td");
-        wins.textContent = team.wins;
-
-        const points = document.createElement("td");
-        points.textContent = team.points;
-
-        row.appendChild(position);
-        row.appendChild(name);
-        row.appendChild(games);
-        row.appendChild(wins);
-        row.appendChild(points);
-
-        table.appendChild(row);
-
+        tbody.append(row);
     });
 
-    standingsContainer.appendChild(table);
+    table.append(thead, tbody);
+
+    // Bootstrapin responsiivinen taulukko
+    const tableWrapper = $("<div>")
+        .addClass("table-responsive");
+
+    tableWrapper.append(table);
+
+    standingsContainer.append(tableWrapper);
 }
 
 
-// Käynnistetään sarjataulukon haku
-getStandings();
+// ==========================================
+// 8. JOUKKUEVALIKON TÄYTTÄMINEN
+// ==========================================
 
-
-// Täytetään joukkuevalikko NHL-joukkueilla
 function populateTeamSelect(teams) {
 
-    const teamSelect = document.getElementById("teamSelect");
+    const teamSelect = $("#teamSelect");
 
-    teams.forEach(team => {
+    // Poistetaan vanhat valinnat
+    teamSelect.empty();
 
-        const option = document.createElement("option");
+    // Lisätään oletusvalinta
+    teamSelect.append(
+        $("<option>")
+            .val("")
+            .text("Valitse NHL-joukkue")
+    );
 
-        // Joukkueen lyhenne toimii valinnan arvona
-        option.value = team.teamAbbrev.default;
+    // Lisätään NHL-joukkueet valikkoon
+    teams.forEach(function(team) {
 
-        // Näytetään joukkueen nimi valikossa
-        option.textContent = team.teamName.default;
+        const option = $("<option>")
+            .val(team.teamAbbrev.default)
+            .text(team.teamName.default);
 
-        teamSelect.appendChild(option);
-
+        teamSelect.append(option);
     });
 }
 
 
-// Haetaan valitun joukkueen otteluohjelma
-async function getTeamSchedule(teamAbbrev) {
+// ==========================================
+// 9. VALITUN JOUKKUEEN OTTELUOHJELMA
+// ==========================================
 
-    const scheduleContainer = document.getElementById("teamSchedule");
+function getTeamSchedule(teamAbbrev) {
 
     const scheduleUrl =
         "https://proxy.cors.dev/https://api-web.nhle.com/v1/club-schedule-season/"
-        + teamAbbrev + "/now";
+        + encodeURIComponent(teamAbbrev) + "/now";
 
-    scheduleContainer.textContent = "Ladataan otteluohjelmaa...";
+    $("#teamSchedule").text("Ladataan otteluohjelmaa...");
 
-    try {
+    $.ajax({
+        url: scheduleUrl,
+        method: "GET",
+        dataType: "json",
+        timeout: 15000,
 
-        // Haetaan joukkueen ottelut API:sta
-        const response = await fetch(scheduleUrl);
+        success: function(data) {
 
-        if (!response.ok) {
-            throw new Error("Otteluohjelman hakeminen epäonnistui");
+            displayTeamSchedule(data.games);
+        },
+
+        error: function(xhr, status, error) {
+
+            console.error("Otteluohjelman API-virhe:", status, error);
+
+            $("#teamSchedule").text(
+                "Otteluohjelman lataaminen epäonnistui."
+            );
         }
-
-        const data = await response.json();
-
-        // Näytetään haetut ottelut
-        displayTeamSchedule(data.games);
-
-    } catch (error) {
-
-        console.error("Otteluohjelman virhe:", error);
-
-        scheduleContainer.textContent =
-            "Otteluohjelman lataaminen epäonnistui.";
-
-    }
-}
-
-
-// Näytetään joukkueen otteluohjelma
-function displayTeamSchedule(games) {
-
-    const scheduleContainer = document.getElementById("teamSchedule");
-
-    scheduleContainer.innerHTML = "";
-
-    if (!games || games.length === 0) {
-
-        scheduleContainer.textContent = "Otteluita ei löytynyt.";
-
-        return;
-    }
-
-    games.forEach(game => {
-
-        const gameCard = document.createElement("div");
-
-        gameCard.classList.add("team-card");
-
-        const date = document.createElement("p");
-        date.textContent = "Päivämäärä: " + game.gameDate;
-
-        const teams = document.createElement("h3");
-
-        teams.textContent =
-            game.awayTeam.abbrev + " "
-            + (game.awayTeam.score ?? "-")
-            + " – "
-            + (game.homeTeam.score ?? "-")
-            + " "
-            + game.homeTeam.abbrev;
-
-        const status = document.createElement("p");
-        status.textContent = "Ottelun tila: " + game.gameState;
-
-        gameCard.appendChild(date);
-        gameCard.appendChild(teams);
-        gameCard.appendChild(status);
-
-        scheduleContainer.appendChild(gameCard);
-
     });
 }
 
 
-// Lisätään joukkuevalikolle tapahtumankäsittelijä
-const teamSelect = document.getElementById("teamSelect");
+// ==========================================
+// 10. JOUKKUEEN OTTELUOHJELMAN NÄYTTÄMINEN
+// ==========================================
 
-teamSelect.addEventListener("change", function() {
+function displayTeamSchedule(games) {
 
-    const selectedTeam = teamSelect.value;
+    const scheduleContainer = $("#teamSchedule");
 
-    if (selectedTeam) {
+    scheduleContainer.empty();
 
-        getTeamSchedule(selectedTeam);
+    if (!games || games.length === 0) {
 
-    } else {
-
-        document.getElementById("teamSchedule").textContent =
-            "Valitse joukkue nähdäksesi sen otteluohjelman.";
-
+        scheduleContainer.text("Otteluita ei löytynyt.");
+        return;
     }
+
+    games.forEach(function(game) {
+
+        const gameCard = $("<div>")
+            .addClass("team-card");
+
+        // Ottelun päivämäärä
+        const date = $("<p>")
+            .text("Päivämäärä: " + game.gameDate);
+
+        // Ottelun joukkueet ja tulos
+        const teams = $("<h3>")
+            .text(
+                game.awayTeam.abbrev + " " +
+                (game.awayTeam.score ?? "-") +
+                " – " +
+                (game.homeTeam.score ?? "-") +
+                " " + game.homeTeam.abbrev
+            );
+
+        // Ottelun tila
+        const status = $("<p>")
+            .text("Ottelun tila: " + game.gameState);
+
+        gameCard.append(
+            date,
+            teams,
+            status
+        );
+
+        scheduleContainer.append(gameCard);
+    });
+}
+
+
+// ==========================================
+// 11. JOUKKUEVALIKON TAPAHTUMANKUUNTELIJA
+// ==========================================
+
+function initializeTeamSelect() {
+
+    $("#teamSelect").on("change", function() {
+
+        const selectedTeam = $(this).val();
+
+        if (selectedTeam) {
+
+            // Haetaan valitun joukkueen ottelut
+            getTeamSchedule(selectedTeam);
+
+        } else {
+
+            $("#teamSchedule").text(
+                "Valitse joukkue nähdäksesi sen otteluohjelman."
+            );
+        }
+    });
+}
+
+
+// ==========================================
+// 12. SOVELLUKSEN KÄYNNISTÄMINEN
+// ==========================================
+
+// Suoritetaan, kun HTML-sivu on latautunut
+$(document).ready(function() {
+
+    console.log("Hockey Center 2.0 käynnistyy!");
+
+    // Käynnistetään hakukentän kuuntelija
+    initializeSearch();
+
+    // Käynnistetään joukkuevalikon kuuntelija
+    initializeTeamSelect();
+
+    // Haetaan NHL-joukkueet
+    getTeams();
+
+    // Haetaan tämän päivän ottelut
+    getGames();
+
+    // Haetaan NHL-sarjataulukko
+    getStandings();
 
 });
