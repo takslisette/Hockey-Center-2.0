@@ -414,3 +414,27 @@ main h2 {
         font-size: 32px;
     }
 }
+
+/* Hockey Center 2.0 - sarjataulukon ulkoasu */
+
+#standings .table {
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+
+#standings .table th {
+    color: #a5f3fc;
+    padding: 15px;
+    font-weight: bold;
+}
+
+#standings .table td {
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+#standings .table-responsive {
+    border-radius: 12px;
+    overflow: hidden;
+}
